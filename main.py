@@ -58,10 +58,10 @@ st.title("Black-Scholes Option Pricing Heatmap")
 # Sidebar Inputs
 st.sidebar.header("Option Parameters")
 
+current_spot_price = st.sidebar.number_input("Current Asset Price", min_value=0.01, value=100.00, step=0.01)
 X = st.sidebar.number_input("Strike Price", min_value=0.01, value=100.00, step=0.01)
 T = st.sidebar.number_input("Time to Expiration (Years)", min_value=0.1,  value=1.0, step=0.1)
 r = st.sidebar.number_input("Risk-Free Interest Rate (in %)", min_value=0.01, max_value=100.00, value=5.00, step=0.01) / 100
-current_spot_price = st.sidebar.number_input("Current Asset Price", min_value=0.01, value=100.00, step=0.01)
 current_volatility = st.sidebar.number_input("Current Volatility (in %)", min_value=0.01, max_value=100.00, value=20.00, step=0.01) / 100
 
 st.sidebar.header("Spot Price and Volatility Range")
