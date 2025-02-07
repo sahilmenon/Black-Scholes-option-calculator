@@ -47,10 +47,63 @@ def generate_heatmap_data(spot_min, spot_max, vol_min, vol_max, X, T, r, option_
 # Function to plot the heatmap
 def plot_heatmap(spot_grid, vol_grid, option_prices, title, ax):
     sns.heatmap(option_prices, xticklabels=np.round(spot_grid[0], 2), 
-                yticklabels=np.round(vol_grid[:, 0], 2), cmap='RdYlGn', annot=False, ax=ax)
+                yticklabels=np.round(vol_grid[:, 0], 2), cmap='RdBu_r', annot=False, ax=ax)
     ax.set_title(title)
     ax.set_xlabel("Spot Price")
     ax.set_ylabel("Volatility")
+
+# Function to generate volatility surface data
+def generate_volatility_surface(spot_min, spot_max, time_min, time_max, X, r, sigma, option_type='call', num_points=50):
+    spot_prices = np.linspace(spot_min, spot_max, num_points)
+    times = np.linspace(time_min, time_max, num_points)
+    
+    # Create meshgrid of spot prices and times
+    spot_grid, time_grid = np.meshgrid(spot_prices, times)
+    
+    # Compute option prices for each combination
+    option_prices = np.zeros_like(spot_grid)
+    for i in range(len(spot_prices)):
+        for j in range(len(times)):
+            option_prices[j, i] = black_scholes(spot_prices[i], X, times[j], r, sigma, option_type=option_type)
+    
+    return spot_grid, time_grid, option_prices
+
+# Function to plot volatility surface
+def plot_volatility_surface(spot_grid, time_grid, option_prices, title):
+    fig = plt.figure(figsize=(10, 7))
+    ax = fig.add_subplot(111, projection='3d')
+    
+    # Use jet colormap for rainbow effect with more detailed surface
+    surface = ax.plot_surface(spot_grid, time_grid, option_prices, 
+                            cmap='jet', 
+                            edgecolor='black',  # Add black edges
+                            linewidth=0.5,      # Make edges thinner
+                            rstride=1,          # Reduce stride to show more lines
+                            cstride=1)
+    
+    # Adjust the view angle
+    ax.view_init(elev=20, azim=-45)
+    
+    # Customize grid with more ticks
+    ax.xaxis.set_major_locator(plt.MaxNLocator(10))  # Increased from 5 to 10
+    ax.yaxis.set_major_locator(plt.MaxNLocator(10))  # Increased from 5 to 10
+    ax.zaxis.set_major_locator(plt.MaxNLocator(10))  # Increased from 5 to 10
+    
+    # Add grid lines
+    ax.grid(True, linestyle='-', alpha=0.6)
+    
+    ax.set_xlabel('Spot Price')
+    ax.set_ylabel('Time to Maturity')
+    ax.set_zlabel('Option Price')
+    ax.set_title(title)
+    
+    # Adjust colorbar
+    fig.colorbar(surface, ax=ax, shrink=0.5, aspect=5)
+    
+    # Make the plot tighter
+    plt.tight_layout()
+    
+    return fig
 
 # Streamlit UI
 st.title("Black-Scholes Option Pricing Heatmap")
@@ -123,3 +176,33 @@ with col2:
     spot_grid_put, vol_grid_put, put_prices = generate_heatmap_data(spot_min, spot_max, vol_min, vol_max, X, T, r, option_type='put', num_points=num_points)
     plot_heatmap(spot_grid_put, vol_grid_put, put_prices, title="Put Option Prices", ax=ax)
     st.pyplot(fig)
+
+# Add Volatility Surface Section
+st.header("Volatility Surfaces")
+
+# Generate and plot volatility surfaces
+col5, col6 = st.columns([1,1], gap="small")
+
+with col5:
+    st.subheader("Call Option Volatility Surface")
+    spot_grid_vol, time_grid_vol, call_prices_vol = generate_volatility_surface(
+        spot_min, spot_max, 0.1, T, X, r, current_volatility,  # Using 0.1 as min time and T as max time
+        option_type='call', num_points=num_points
+    )
+    fig_vol_call = plot_volatility_surface(
+        spot_grid_vol, time_grid_vol, call_prices_vol, 
+        "Call Option Price Surface"
+    )
+    st.pyplot(fig_vol_call)
+
+with col6:
+    st.subheader("Put Option Volatility Surface")
+    spot_grid_vol, time_grid_vol, put_prices_vol = generate_volatility_surface(
+        spot_min, spot_max, 0.1, T, X, r, current_volatility,  # Using 0.1 as min time and T as max time
+        option_type='put', num_points=num_points
+    )
+    fig_vol_put = plot_volatility_surface(
+        spot_grid_vol, time_grid_vol, put_prices_vol, 
+        "Put Option Price Surface"
+    )
+    st.pyplot(fig_vol_put)
