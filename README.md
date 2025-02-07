@@ -1,68 +1,80 @@
-# Black-Scholes Option Pricing Heatmap Application
+BLACK-SCHOLES OPTION PRICING HEATMAP APPLICATION
 
-This application is a Python-based Streamlit app that calculates and visualizes option prices using the Black-Scholes formula. It generates interactive heatmaps for call and put options based on user-defined parameters.
+DESCRIPTION
+-----------
+A Python-based Streamlit app that calculates and visualizes option prices using the Black-Scholes formula. The application generates interactive heatmaps and 3D surfaces for call and put options based on user-defined parameters.
 
-## Features
+FEATURES
+--------
+- Black-Scholes Model calculations for call and put options
+- Interactive heatmaps showing price sensitivity to spot price and volatility
+- 3D volatility surfaces for comprehensive price visualization
+- Real-time option price calculations
+- Customizable parameters via sidebar controls
+- Grid resolution adjustment for detailed analysis
 
-- **Black-Scholes Model**: Calculate call and put option prices based on the Black-Scholes formula.
-- **Interactive Heatmaps**: Visualize how option prices vary with changes in spot price and volatility.
-- **Customizable Parameters**: Adjust key option pricing parameters such as strike price, time to expiration, risk-free rate, and volatility.
-- **Real-Time Calculations**: Display call and put option prices based on current input values.
+REQUIREMENTS
+------------
+Python libraries:
+- streamlit
+- numpy
+- pandas
+- matplotlib
+- seaborn
+- scipy
 
-## Requirements
-
-To run this application, you need the following Python libraries:
-
-- `streamlit`
-- `numpy`
-- `pandas`
-- `matplotlib`
-- `seaborn`
-- `scipy`
-
-## Installation
-
-1. Clone this repository or download the script file `main.py`.
-2. Install the required dependencies:
-   ```bash
+INSTALLATION
+------------
+1. Clone the repository or download the script files
+2. Install dependencies:
    pip install streamlit numpy pandas matplotlib seaborn scipy
-   ```
-3. Run the Streamlit application:
-   ```bash
+3. Run the application:
    streamlit run main.py
-   ```
 
-## Usage
+USAGE
+-----
+1. Launch the app using the streamlit command
+2. Adjust parameters in the sidebar:
+   - Current Asset Price
+   - Strike Price
+   - Time to Expiration (Years)
+   - Risk-Free Interest Rate (%)
+   - Current Volatility (%)
+   - Spot Price and Volatility Ranges
+   - Grid Resolution
+3. View the calculated option prices, heatmaps, and 3D surfaces
 
-1. Launch the app by running the `streamlit` command mentioned above.
-2. Use the sidebar to input the following parameters:
-   - **Current Asset Price**: Spot price of the asset.
-   - **Strike Price**: Strike price of the option.
-   - **Time to Expiration (Years)**: Time until the option expires.
-   - **Risk-Free Interest Rate (%)**: Annualized risk-free interest rate.
-   - **Current Volatility (%)**: Implied volatility of the asset.
-   - **Spot Price and Volatility Ranges**: Define the range for the heatmap axes.
-   - **Grid Resolution**: Number of points for the heatmap grid.
-3. View the calculated option prices and the corresponding heatmaps for call and put options.
+OUTPUT
+------
+- Current call and put option prices
+- Price sensitivity heatmaps
+- 3D volatility surfaces
+- Parameter summary table
 
-## Example Output
+LICENSE
+-------
+MIT License
 
-- **Option Prices Summary**: Displays the current calculated call and put option prices.
-- **Heatmaps**: Interactive visualizations showing how option prices vary with spot price and volatility.
+Copyright (c) 2024
 
-## Code Structure
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-1. **`black_scholes`**: Computes the call and put option prices using the Black-Scholes formula.
-2. **`generate_heatmap_data`**: Creates data for heatmap visualization.
-3. **`plot_heatmap`**: Renders the heatmap using Seaborn.
-4. **Streamlit UI**: Implements an interactive interface for parameter input and visualization.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-## Screenshots
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
-- **Summary Table and Option Prices**: Displays calculated values for the selected parameters.
-- **Heatmaps**: Visual representation of call and put option prices over varying spot prices and volatilities.
-
-## License
-
-This project is licensed under the MIT License. Feel free to use and modify it as needed.
-
+CONTACT
+-------
+For questions or issues, please open an issue on the project repository. 
