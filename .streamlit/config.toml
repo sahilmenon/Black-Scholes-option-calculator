@@ -1,4 +1,4 @@
 [server]
-baseUrlPath = "project/optionpricing"
+baseUrlPath = "project/optionspricing"
 enableCORS = false
 enableXsrfProtection = false
