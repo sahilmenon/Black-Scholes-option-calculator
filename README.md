@@ -71,14 +71,6 @@ streamlit, numpy, pandas, matplotlib, seaborn, scipy, yfinance
 
 ---
 
-## What's not included
-
-- **American options** — Black-Scholes prices European options only; American options require binomial trees or finite differences
-- **Multi-leg strategies** — no combined positions (spreads, straddles, condors)
-- **Real-time streaming** — data refreshes on page reload, not live tick-by-tick
-
----
-
 ## License
 
 MIT License — see source for full text.
