@@ -140,11 +140,12 @@ def fetch_expirations(ticker):
 @st.cache_data(ttl=300)
 def fetch_options_chain(ticker, expiry):
     if not YFINANCE_AVAILABLE:
-        return None
+        return None, None
     try:
-        return yf.Ticker(ticker.upper()).option_chain(expiry)
+        chain = yf.Ticker(ticker.upper()).option_chain(expiry)
+        return chain.calls, chain.puts  # DataFrames are serializable; OptionChain object is not
     except Exception:
-        return None
+        return None, None
 
 @st.cache_data
 def run_monte_carlo(S, K, T, r, sigma, num_sims, seed):
@@ -546,9 +547,9 @@ with tab_market:
             )
         else:
             selected_exp = st.selectbox("Expiration Date", expirations)
-            chain = fetch_options_chain(ticker, selected_exp)
+            calls_df, puts_df = fetch_options_chain(ticker, selected_exp)
 
-            if chain is None:
+            if calls_df is None:
                 st.error("Could not load the options chain for this expiration.")
             else:
                 exp_dt = datetime.strptime(selected_exp, '%Y-%m-%d')
@@ -559,8 +560,8 @@ with tab_market:
                 )
 
                 for opt_label, df_raw, bs_type in [
-                    ('Calls', chain.calls, 'call'),
-                    ('Puts',  chain.puts,  'put'),
+                    ('Calls', calls_df, 'call'),
+                    ('Puts',  puts_df,  'put'),
                 ]:
                     df = df_raw[['strike', 'bid', 'ask', 'lastPrice',
                                  'impliedVolatility', 'volume', 'openInterest']].copy()
