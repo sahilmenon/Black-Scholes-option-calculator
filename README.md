@@ -1,80 +1,84 @@
-BLACK-SCHOLES OPTION PRICING HEATMAP APPLICATION
+# Black-Scholes Option Pricing Calculator
 
-DESCRIPTION
------------
-A Python-based Streamlit app that calculates and visualizes option prices using the Black-Scholes formula. The application generates interactive heatmaps and 3D surfaces for call and put options based on user-defined parameters.
+A comprehensive Streamlit app for pricing European options using the Black-Scholes model, with interactive visualizations, Greeks analysis, Monte Carlo simulation, implied volatility solving, and live market data integration.
 
-FEATURES
---------
-- Black-Scholes Model calculations for call and put options
-- Interactive heatmaps showing price sensitivity to spot price and volatility
-- 3D volatility surfaces for comprehensive price visualization
-- Real-time option price calculations
-- Customizable parameters via sidebar controls
-- Grid resolution adjustment for detailed analysis
+**Live app:** https://black-scholes-option-visualiser.streamlit.app/
 
-REQUIREMENTS
-------------
-Python libraries:
-- streamlit
-- numpy
-- pandas
-- matplotlib
-- seaborn
-- scipy
+---
 
-INSTALLATION
-------------
-1. Clone the repository or download the script files
-2. Install dependencies:
-   pip install streamlit numpy pandas matplotlib seaborn scipy
-3. Run the application:
-   streamlit run main.py
+## Features
 
-USAGE
------
-1. Launch the app using the streamlit command
-2. Adjust parameters in the sidebar:
-   - Current Asset Price
-   - Strike Price
-   - Time to Expiration (Years)
-   - Risk-Free Interest Rate (%)
-   - Current Volatility (%)
-   - Spot Price and Volatility Ranges
-   - Grid Resolution
-3. View the calculated option prices, heatmaps, and 3D surfaces
+### Pricing
+- Black-Scholes call and put prices with 4-decimal precision
+- Auto-fill spot price and historical volatility from any ticker via Yahoo Finance
 
-OUTPUT
-------
-- Current call and put option prices
-- Price sensitivity heatmaps
-- 3D volatility surfaces
-- Parameter summary table
+### Option Greeks
+- Full Greeks table: **Delta, Gamma, Theta, Vega, Rho** for both call and put
+- Bar chart comparison of call vs put Greeks
 
-LICENSE
--------
-MIT License
+### Heatmaps
+- **Price heatmaps** — option price across a grid of spot prices × volatilities
+- **P&L heatmaps** — profit/loss relative to a user-defined purchase price
+- **Greeks heatmaps** — Delta, Gamma, Vega, Theta across the same grid
 
-Copyright (c) 2024
+### Volatility Surfaces
+- Interactive 3D surfaces of option price vs spot price and time to maturity
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+### Payoff Diagram
+- P&L at expiry for call and put positions
+- Breakeven points and max loss clearly marked
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+### Monte Carlo Simulation
+- Geometric Brownian Motion with configurable simulation count and seed
+- Side-by-side comparison of Black-Scholes vs Monte Carlo prices
+- 95% confidence intervals
+- Sample path visualization
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+### Implied Volatility Solver
+- Back-solves for IV from any market option price using Brent's method
+- IV sensitivity curve showing how implied vol changes with market price
 
-CONTACT
--------
-For questions or issues, please open an issue on the project repository. 
+### Live Market Data & Mispricing
+- Fetch real-time prices and options chains via Yahoo Finance
+- Compare Black-Scholes model prices against market prices for each strike
+- Mispricing bar charts (red = market overprices, green = market underprices)
+
+---
+
+## Installation
+
+```bash
+git clone https://github.com/sahilmenon/Black-Scholes-option-calculator.git
+cd Black-Scholes-option-calculator
+pip install -r requirements.txt
+streamlit run main.py
+```
+
+### Dependencies
+```
+streamlit, numpy, pandas, matplotlib, seaborn, scipy, yfinance
+```
+
+---
+
+## Usage
+
+1. **Sidebar — Option Parameters**: set spot price, strike, time to expiry, risk-free rate, and volatility manually, or enter a ticker to auto-fill from live market data.
+2. **Sidebar — Heatmap Range**: define the spot price and volatility ranges for grid visualizations.
+3. **Sidebar — P&L Settings**: set the purchase price for payoff and P&L heatmap calculations.
+4. **Sidebar — Monte Carlo**: choose number of simulations and random seed.
+5. Navigate the **8 tabs** to explore different analyses.
+
+---
+
+## What's not included
+
+- **American options** — Black-Scholes prices European options only; American options require binomial trees or finite differences
+- **Multi-leg strategies** — no combined positions (spreads, straddles, condors)
+- **Real-time streaming** — data refreshes on page reload, not live tick-by-tick
+
+---
+
+## License
+
+MIT License — see source for full text.
