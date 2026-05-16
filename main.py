@@ -264,10 +264,10 @@ st.title("Black-Scholes Option Pricing Calculator")
 # ── Sidebar ──────────────────────────────────────────────────────────────────
 
 st.sidebar.header("Real-Time Data (Optional)")
-ticker = st.sidebar.text_input("Ticker Symbol", value="", placeholder="e.g. AAPL, MSFT")
+ticker = st.sidebar.text_input("Ticker Symbol", value="", placeholder="e.g. AAPL, MSFT").strip().lstrip('$').upper()
 live_price, live_vol = None, None
-if ticker.strip():
-    live_price, live_vol = fetch_live_data(ticker.strip())
+if ticker:
+    live_price, live_vol = fetch_live_data(ticker)
     if live_price:
         msg = f"${live_price:.2f}"
         if live_vol:
@@ -522,7 +522,7 @@ with tab_iv:
 
 with tab_market:
     st.subheader("Live Market Data & Mispricing")
-    if not ticker.strip():
+    if not ticker:
         st.info("Enter a ticker symbol in the sidebar to compare Black-Scholes model prices "
                 "against live market option prices.")
     elif not YFINANCE_AVAILABLE:
@@ -538,7 +538,7 @@ with tab_market:
             info_label += f" | 1Y historical vol: **{live_vol*100:.1f}%**"
         st.success(info_label)
 
-        expirations = fetch_expirations(ticker.strip())
+        expirations = fetch_expirations(ticker)
         if not expirations:
             st.warning(
                 "No options chain found for this ticker. "
@@ -546,7 +546,7 @@ with tab_market:
             )
         else:
             selected_exp = st.selectbox("Expiration Date", expirations)
-            chain = fetch_options_chain(ticker.strip(), selected_exp)
+            chain = fetch_options_chain(ticker, selected_exp)
 
             if chain is None:
                 st.error("Could not load the options chain for this expiration.")
