@@ -100,30 +100,51 @@ def fetch_live_data(ticker):
         return None, None
     try:
         stock = yf.Ticker(ticker.upper())
-        info = stock.info
-        price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose')
+
+        # fast_info is reliable in yfinance 0.2+
+        price = None
+        try:
+            price = stock.fast_info.last_price
+        except Exception:
+            pass
+
+        # fall back to recent history close
         hist = stock.history(period='1y')
+        if not price and not hist.empty:
+            price = float(hist['Close'].iloc[-1])
+
+        # last resort: info dict (slow, fields vary by version)
+        if not price:
+            info = stock.info
+            price = (info.get('currentPrice') or info.get('regularMarketPrice')
+                     or info.get('previousClose'))
+
         hist_vol = None
         if not hist.empty and len(hist) > 20:
             returns = np.log(hist['Close'] / hist['Close'].shift(1)).dropna()
             hist_vol = float(returns.std() * np.sqrt(252))
+
         return (float(price) if price else None), hist_vol
     except Exception:
         return None, None
 
 @st.cache_data(ttl=300)
+def fetch_expirations(ticker):
+    if not YFINANCE_AVAILABLE:
+        return []
+    try:
+        return list(yf.Ticker(ticker.upper()).options)
+    except Exception:
+        return []
+
+@st.cache_data(ttl=300)
 def fetch_options_chain(ticker, expiry):
     if not YFINANCE_AVAILABLE:
-        return None, []
+        return None
     try:
-        stock = yf.Ticker(ticker.upper())
-        exps = stock.options
-        if not exps:
-            return None, []
-        chain = stock.option_chain(expiry)
-        return chain, list(exps)
+        return yf.Ticker(ticker.upper()).option_chain(expiry)
     except Exception:
-        return None, []
+        return None
 
 @st.cache_data
 def run_monte_carlo(S, K, T, r, sigma, num_sims, seed):
@@ -504,78 +525,84 @@ with tab_market:
     if not ticker.strip():
         st.info("Enter a ticker symbol in the sidebar to compare Black-Scholes model prices "
                 "against live market option prices.")
-    elif not live_price:
-        st.error("Could not load market data for this ticker.")
     elif not YFINANCE_AVAILABLE:
         st.error("yfinance not installed.")
+    elif not live_price:
+        st.error(
+            f"Could not load price data for **{ticker.upper()}**. "
+            "Make sure it's a valid US-listed ticker (e.g. AAPL, MSFT, TSLA)."
+        )
     else:
-        label = f"**{ticker.upper()}** — ${live_price:.2f}"
+        info_label = f"**{ticker.upper()}** — ${live_price:.2f}"
         if live_vol:
-            label += f" | 1Y historical vol: **{live_vol*100:.1f}%**"
-        st.success(label)
+            info_label += f" | 1Y historical vol: **{live_vol*100:.1f}%**"
+        st.success(info_label)
 
-        try:
-            stock = yf.Ticker(ticker.upper())
-            expirations = stock.options
-            if not expirations:
-                st.warning("No options data available for this ticker.")
+        expirations = fetch_expirations(ticker.strip())
+        if not expirations:
+            st.warning(
+                "No options chain found for this ticker. "
+                "Options data is only available for US-listed equities with active options markets."
+            )
+        else:
+            selected_exp = st.selectbox("Expiration Date", expirations)
+            chain = fetch_options_chain(ticker.strip(), selected_exp)
+
+            if chain is None:
+                st.error("Could not load the options chain for this expiration.")
             else:
-                selected_exp = st.selectbox("Expiration Date", expirations)
-                chain, _ = fetch_options_chain(ticker.strip(), selected_exp)
+                exp_dt = datetime.strptime(selected_exp, '%Y-%m-%d')
+                T_mkt = max((exp_dt - datetime.now()).days / 365, 0.001)
+                st.caption(
+                    f"Time to expiry: **{T_mkt:.3f} years** | "
+                    f"Using σ = {sigma*100:.1f}% from sidebar"
+                )
 
-                if chain is not None:
-                    exp_dt = datetime.strptime(selected_exp, '%Y-%m-%d')
-                    T_mkt = max((exp_dt - datetime.now()).days / 365, 0.001)
-                    st.caption(f"Time to expiry: **{T_mkt:.3f} years** | "
-                               f"Using σ = {sigma*100:.1f}% from sidebar")
+                for opt_label, df_raw, bs_type in [
+                    ('Calls', chain.calls, 'call'),
+                    ('Puts',  chain.puts,  'put'),
+                ]:
+                    df = df_raw[['strike', 'bid', 'ask', 'lastPrice',
+                                 'impliedVolatility', 'volume', 'openInterest']].copy()
+                    df = df[df['volume'].fillna(0) > 0].copy()
+                    if df.empty:
+                        continue
 
-                    for label, df_raw, bs_type in [
-                        ('Calls', chain.calls, 'call'),
-                        ('Puts',  chain.puts,  'put'),
-                    ]:
-                        df = df_raw[['strike', 'bid', 'ask', 'lastPrice',
-                                     'impliedVolatility', 'volume', 'openInterest']].copy()
-                        df = df[df['volume'].fillna(0) > 0].copy()
-                        if df.empty:
-                            continue
-                        mid = (df['bid'] + df['ask']) / 2
-                        df['marketPrice'] = np.where(mid > 0, mid, df['lastPrice'])
-                        df['bsPrice'] = df['strike'].apply(
-                            lambda k: black_scholes(live_price, k, T_mkt, r, sigma, bs_type)
-                        )
-                        df['mispricing']    = (df['marketPrice'] - df['bsPrice']).round(4)
-                        df['mispricingPct'] = ((df['mispricing'] / df['bsPrice']) * 100).round(2)
+                    mid = (df['bid'] + df['ask']) / 2
+                    df['marketPrice'] = np.where(mid > 0, mid, df['lastPrice'])
+                    df['bsPrice'] = df['strike'].apply(
+                        lambda k: black_scholes(live_price, k, T_mkt, r, sigma, bs_type)
+                    )
+                    df['mispricing']    = (df['marketPrice'] - df['bsPrice']).round(4)
+                    df['mispricingPct'] = ((df['mispricing'] / df['bsPrice']) * 100).round(2)
 
-                        st.subheader(f"{label} — {selected_exp}")
-                        display = df[['strike', 'marketPrice', 'bsPrice', 'mispricing',
-                                      'mispricingPct', 'impliedVolatility', 'volume']].rename(columns={
-                            'strike': 'Strike', 'marketPrice': 'Market Price',
-                            'bsPrice': 'BS Price', 'mispricing': 'Δ ($)',
-                            'mispricingPct': 'Δ (%)', 'impliedVolatility': 'Mkt IV',
-                            'volume': 'Volume'
-                        }).round(4)
-                        st.dataframe(display, use_container_width=True)
+                    st.subheader(f"{opt_label} — {selected_exp}")
+                    display = df[['strike', 'marketPrice', 'bsPrice', 'mispricing',
+                                  'mispricingPct', 'impliedVolatility', 'volume']].rename(columns={
+                        'strike': 'Strike', 'marketPrice': 'Market Price',
+                        'bsPrice': 'BS Price', 'mispricing': 'Δ ($)',
+                        'mispricingPct': 'Δ (%)', 'impliedVolatility': 'Mkt IV',
+                        'volume': 'Volume'
+                    }).round(4)
+                    st.dataframe(display, use_container_width=True)
 
-                        # Mispricing bar chart
-                        step = df['strike'].diff().median()
-                        bar_width = step * 0.8 if not np.isnan(step) and step > 0 else 1.0
-                        fig, ax = plt.subplots(figsize=(11, 4))
-                        colors = ['#E74C3C' if m > 0 else '#2ECC71' for m in df['mispricing']]
-                        ax.bar(df['strike'], df['mispricing'], color=colors,
-                               alpha=0.8, width=bar_width)
-                        ax.axhline(0, color='black', linewidth=1)
-                        ax.axvline(live_price, color='blue', linestyle='--', linewidth=1.5,
-                                   label=f'Spot = ${live_price:.2f}')
-                        ax.set_xlabel('Strike Price')
-                        ax.set_ylabel('Market − BS Price ($)')
-                        ax.set_title(f'{ticker.upper()} {label} Mispricing '
-                                     f'(σ = {sigma*100:.1f}%)')
-                        ax.legend()
-                        ax.grid(True, alpha=0.3)
-                        st.pyplot(fig)
-                        plt.close()
+                    step = df['strike'].diff().median()
+                    bar_width = step * 0.8 if (not np.isnan(step) and step > 0) else 1.0
+                    fig, ax = plt.subplots(figsize=(11, 4))
+                    colors = ['#E74C3C' if m > 0 else '#2ECC71' for m in df['mispricing']]
+                    ax.bar(df['strike'], df['mispricing'], color=colors, alpha=0.8, width=bar_width)
+                    ax.axhline(0, color='black', linewidth=1)
+                    ax.axvline(live_price, color='blue', linestyle='--', linewidth=1.5,
+                               label=f'Spot = ${live_price:.2f}')
+                    ax.set_xlabel('Strike Price')
+                    ax.set_ylabel('Market − BS Price ($)')
+                    ax.set_title(f'{ticker.upper()} {opt_label} Mispricing (σ = {sigma*100:.1f}%)')
+                    ax.legend()
+                    ax.grid(True, alpha=0.3)
+                    st.pyplot(fig)
+                    plt.close()
 
-                    st.caption("Red = market overprices vs model | Green = market underprices. "
-                               "Adjust σ in sidebar to see how IV assumptions shift the mispricing.")
-        except Exception as e:
-            st.error(f"Error loading options data: {e}")
+                st.caption(
+                    "Red = market overprices vs model | Green = market underprices. "
+                    "Adjust σ in sidebar to see how IV assumptions shift the mispricing."
+                )
